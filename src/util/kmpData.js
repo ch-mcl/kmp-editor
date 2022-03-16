@@ -6,7 +6,6 @@ const { Vec3 } = require("../math/vec3.js")
 let unhandledSections =
 [
 	{ id: "AREA", entryLen: 0x30 },
-	{ id: "CAME", entryLen: 0x48 },
 	{ id: "CNPT", entryLen: 0x1c },
 	{ id: "MSPT", entryLen: 0x1c },
 ]
@@ -63,6 +62,9 @@ class KmpData
 		let checkpointPaths = []
 		let objects = []
 		let routes = []
+		let camerasExtraData0 = 0
+		let camerasExtraData1 = 0
+		let cameras = []
 		let respawnPoints = []
 		let cannonPoints = []
 		let trackInfo = {}
@@ -232,6 +234,34 @@ class KmpData
 					break
 				}
 				
+				case "CAME":
+				{
+					camerasExtraData0 = extraData >> 8 // get upper 8bit (First Opening Pan Camera Index)
+					camerasExtraData1 = extraData & 0x00FF // get lower 8 bit
+					for (let i = 0; i < entryNum; i++)
+					{
+						let type = parser.readByte()
+						let nextCameraIndex = parser.readByte()
+						let shake = parser.readByte()
+						let routeIndex = parser.readByte()
+						let pointSpeed = parser.readUInt16()
+						let zoomSpeed = parser.readUInt16()
+						let viewSpeed = parser.readUInt16()
+						let start = parser.readByte()
+						let movie = parser.readByte()
+						let pos = parser.readVec3()
+						let rotation = parser.readVec3()
+						let zoomStart = parser.readFloat32()
+						let zoomEnd = parser.readFloat32()
+						let viewStart = parser.readVec3()
+						let viewEnd = parser.readVec3()
+						let time = parser.readFloat32()
+
+						cameras.push({ type, nextCameraIndex, shake, routeIndex, pointSpeed, zoomSpeed, viewSpeed, start, movie, pos, rotation, zoomStart, zoomEnd, viewStart, viewEnd, time })
+					}
+					break
+				}
+				
 				case "JGPT":
 				{
 					for (let i = 0; i < entryNum; i++)
@@ -312,7 +342,7 @@ class KmpData
 			checkpointPoints, checkpointPaths,
 			objects, routes, cannonPoints,
 			trackInfo,
-			respawnPoints
+			respawnPoints, cameras, camerasExtraData0, camerasExtraData1
 		}
 	}
 	
@@ -487,6 +517,31 @@ class KmpData
 			}
 		}
 		
+		kmp.camerasExtraData0 = kmpData.camerasExtraData0
+		kmp.camerasExtraData1 = kmpData.camerasExtraData1
+		for (let i = 0; i < kmpData.cameras.length; i++)
+		{
+			let kmpCamera = kmpData.cameras[i]
+			
+			let node = kmp.cameras.addNode()
+			node.pos = new Vec3(kmpCamera.pos.x, -kmpCamera.pos.z, -kmpCamera.pos.y)
+			node.rotation = new Vec3(kmpCamera.rotation.x, kmpCamera.rotation.y, kmpCamera.rotation.z)
+			node.viewStart = new Vec3(kmpCamera.viewStart.x, -kmpCamera.viewStart.z, -kmpCamera.viewStart.y)
+			node.viewEnd = new Vec3(kmpCamera.viewEnd.x, -kmpCamera.viewEnd.z, -kmpCamera.viewEnd.y)
+			node.type = kmpCamera.type
+			node.nextCameraIndex = kmpCamera.nextCameraIndex
+			node.shake = kmpCamera.shake
+			node.routeIndex = kmpCamera.routeIndex
+			node.pointSpeed = kmpCamera.pointSpeed
+			node.zoomSpeed = kmpCamera.zoomSpeed
+			node.viewSpeed = kmpCamera.viewSpeed
+			node.start = kmpCamera.start
+			node.movie = kmpCamera.movie
+			node.zoomStart = kmpCamera.zoomStart
+			node.zoomEnd = kmpCamera.zoomEnd
+			node.time = kmpCamera.time
+		}
+
 		for (let i = 0; i < kmpData.respawnPoints.length; i++)
 		{
 			let kmpPoint = kmpData.respawnPoints[i]
@@ -911,7 +966,45 @@ class KmpData
 		writeUnhandledSection("AREA")
 		
 		// Write CAME
-		writeUnhandledSection("CAME")
+		let sectionCameAddr = w.head
+		let sectionCameOrder = sectionOrder.findIndex(s => s == "CAME")
+		w.seek(sectionOffsetsAddr + sectionCameOrder * 4)
+		w.writeUInt32(sectionCameAddr - headerEndAddr)
+
+		w.seek(sectionCameAddr)
+		w.writeAscii("CAME")
+		w.writeUInt16(this.cameras.nodes.length)
+		w.writeByte(this.camerasExtraData0)
+		w.writeByte(this.camerasExtraData1)
+		for (let i = 0; i < this.cameras.nodes.length; i++)
+		{
+			let cam = this.cameras.nodes[i]
+			
+			w.writeByte(cam.type)
+			w.writeByte(cam.nextCameraIndex)
+			w.writeByte(cam.shake)
+			w.writeByte(cam.routeIndex)
+			w.writeUInt16(cam.pointSpeed)
+			w.writeUInt16(cam.zoomSpeed)
+			w.writeUInt16(cam.viewSpeed)
+			w.writeByte(cam.start)
+			w.writeByte(cam.movie)
+			w.writeFloat32(cam.pos.x)
+			w.writeFloat32(-cam.pos.z)
+			w.writeFloat32(-cam.pos.y)
+			w.writeFloat32(cam.rotation.x)
+			w.writeFloat32(cam.rotation.y)
+			w.writeFloat32(cam.rotation.z)
+			w.writeFloat32(cam.zoomStart)
+			w.writeFloat32(cam.zoomEnd)
+			w.writeFloat32(cam.viewStart.x)
+			w.writeFloat32(-cam.viewStart.z)
+			w.writeFloat32(-cam.viewStart.y)
+			w.writeFloat32(cam.viewEnd.x)
+			w.writeFloat32(-cam.viewEnd.z)
+			w.writeFloat32(-cam.viewEnd.y)
+			w.writeFloat32(cam.time)
+		}
 		
 		// Write JGPT
 		let sectionJgptAddr = w.head
@@ -1143,6 +1236,46 @@ class KmpData
 			newNode.effect = oldNode.effect
 		}
 		
+		this.cameras = new NodeGraph()
+		this.cameras.onAddNode = (node) =>
+		{
+			node.pos = new Vec3(0, 0, 0)
+			node.rotation = new Vec3(0, 0, 0)
+			node.viewStart = new Vec3(0, 0, 0)
+			node.viewEnd = new Vec3(0, 0, 0)
+			node.type = 0
+			node.nextCameraIndex = 0
+			node.shake = 0
+			node.routeIndex = 0xffff
+			node.pointSpeed = 1
+			node.zoomSpeed = 1
+			node.viewSpeed = 1
+			node.start = 0
+			node.movie = 0
+			node.zoomStart = 1
+			node.zoomEnd = 1
+			node.time = 0
+		}
+		this.cameras.onCloneNode = (newNode, oldNode) =>
+		{
+			newNode.pos = oldNode.pos.clone()
+			newNode.rotation = oldNode.rotation.clone()
+			newNode.viewStart = oldNode.viewStart.clone()
+			newNode.viewEnd = oldNode.viewEnd.clone()
+			newNode.type = oldNode.type
+			newNode.nextCameraIndex = oldNode.nextCameraIndex
+			newNode.shake = oldNode.shake
+			newNode.routeIndex = oldNode.routeIndex
+			newNode.pointSpeed = oldNode.pointSpeed
+			newNode.zoomSpeed = oldNode.zoomSpeed
+			newNode.viewSpeed = oldNode.viewSpeed
+			newNode.start = oldNode.start
+			newNode.movie = oldNode.movie
+			newNode.zoomStart = oldNode.zoomStart
+			newNode.zoomEnd = oldNode.zoomEnd
+			newNode.time = oldNode.time
+		}
+		
 		this.finishPoints = new NodeGraph()
 		this.finishPoints.onAddNode = (node) =>
 		{
@@ -1159,15 +1292,21 @@ class KmpData
 			newNode.unknown = oldNode.unknown
 		}
 		
-		this.trackInfo = {}
-		this.trackInfo.lapCount = 3
-		this.trackInfo.polePosition = 0
-		this.trackInfo.driverDistance = 0
-		this.trackInfo.unknown1 = 0
-		this.trackInfo.flareColor = [0x00, 0xff, 0xff, 0xff]
-		this.trackInfo.unknown2 = 50
-		this.trackInfo.unknown3 = 0
-		this.trackInfo.speedMod = 0
+		if (this.trackInfo === null) {
+			this.trackInfo = {}
+			this.trackInfo.lapCount = 3
+			this.trackInfo.polePosition = 0
+			this.trackInfo.driverDistance = 0
+			this.trackInfo.unknown1 = 0
+			this.trackInfo.flareColor = [0x00, 0xff, 0xff, 0xff]
+			this.trackInfo.unknown2 = 50
+			this.trackInfo.unknown3 = 0
+			this.trackInfo.speedMod = 0
+
+			this.camerasExtraData0 = 0
+			this.camerasExtraData1 = 0
+		}
+
 	}
 	
 	
@@ -1226,6 +1365,7 @@ class KmpData
 		cloned.objects = this.objects.clone()
 		cloned.respawnPoints = this.respawnPoints.clone()
 		cloned.cannonPoints = this.cannonPoints.clone()
+		cloned.cameras = this.cameras.clone()
 		
 		for (let route of this.routes)
 		{
