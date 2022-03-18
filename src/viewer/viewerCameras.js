@@ -78,7 +78,10 @@ class ViewerCameras
 		panel.addButton(null, "(A) Select/Unselect All", () => this.toggleAllSelection())
 		// panel.addButton(null, "(S) Select All With Same ID", () => this.toggleAllSelectionByID())
 		panel.addButton(null, "(X) Delete Selected", () => this.deleteSelectedPoints())
-		
+
+		panel.addSelectionNumericInput(null, "First Opening Pan Camera", -1000000, 1000000, this.data.camerasExtraDatas.introPanFirstCameraIndex, null, 100.0, true, false, (x, i) => { this.window.setNotSaved(); this.data.camerasExtraDatas.introPanFirstCameraIndex = x })
+		panel.addSelectionNumericInput(null, "unknown1", -1000000, 1000000, this.data.camerasExtraDatas.unk0x01, null, 100.0, true, false, (x, i) => { this.window.setNotSaved(); this.data.camerasExtraDatas.unk0x01 = x })
+
 		let selectedPoints = this.data.cameras.nodes.filter(p => p.selected)
 
 		let selectionGroup = panel.addGroup(null, "Selection:")
@@ -114,7 +117,7 @@ class ViewerCameras
 		panel.addSelectionNumericInput(selectionGroup,   "ViewEnd Z", -1000000, 1000000, selectedPoints.map(cam =>  -cam.viewEnd.y),   null, 100.0, enabled, multiedit, (x, i) => { this.window.setNotSaved(); selectedPoints[i].viewEnd.y = -x })
 				
 		panel.addSelectionNumericInput(selectionGroup,   "Route", 0, 0xffff, selectedPoints.map(p => p.routeIndex), 1.0, 1.0, enabled, multiedit, (x, i) => { this.window.setNotSaved(); selectedPoints[i].routeIndex = x })
-		panel.addSelectionNumericInput(selectionGroup,   "Next Camera", 0, 0xffff, selectedPoints.map(p => p.nextIndex), 1.0, 1.0, enabled, multiedit, (x, i) => { this.window.setNotSaved(); selectedPoints[i].nextIndex = x })
+		panel.addSelectionNumericInput(selectionGroup,   "Next Camera", 0, 0xffff, selectedPoints.map(p => p.nextCameraIndex), 1.0, 1.0, enabled, multiedit, (x, i) => { this.window.setNotSaved(); selectedPoints[i].nextCameraIndex = x })
 
 	}
 	

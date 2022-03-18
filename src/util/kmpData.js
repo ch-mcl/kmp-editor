@@ -62,8 +62,7 @@ class KmpData
 		let checkpointPaths = []
 		let objects = []
 		let routes = []
-		let camerasExtraData0 = 0
-		let camerasExtraData1 = 0
+		let camerasExtraDatas = {}
 		let cameras = []
 		let respawnPoints = []
 		let cannonPoints = []
@@ -236,8 +235,8 @@ class KmpData
 				
 				case "CAME":
 				{
-					camerasExtraData0 = extraData >> 8 // get upper 8bit (First Opening Pan Camera Index)
-					camerasExtraData1 = extraData & 0x00FF // get lower 8 bit
+					camerasExtraDatas.introPanFirstCameraIndex = extraData >> 8 // get upper 8bit
+					camerasExtraDatas.unk0x01 = extraData & 0x00FF // get lower 8 bit
 					for (let i = 0; i < entryNum; i++)
 					{
 						let type = parser.readByte()
@@ -342,7 +341,7 @@ class KmpData
 			checkpointPoints, checkpointPaths,
 			objects, routes, cannonPoints,
 			trackInfo,
-			respawnPoints, cameras, camerasExtraData0, camerasExtraData1
+			respawnPoints, cameras, camerasExtraDatas
 		}
 	}
 	
@@ -517,8 +516,7 @@ class KmpData
 			}
 		}
 		
-		kmp.camerasExtraData0 = kmpData.camerasExtraData0
-		kmp.camerasExtraData1 = kmpData.camerasExtraData1
+		kmp.camerasExtraDatas = kmpData.camerasExtraDatas
 		for (let i = 0; i < kmpData.cameras.length; i++)
 		{
 			let kmpCamera = kmpData.cameras[i]
@@ -974,8 +972,8 @@ class KmpData
 		w.seek(sectionCameAddr)
 		w.writeAscii("CAME")
 		w.writeUInt16(this.cameras.nodes.length)
-		w.writeByte(this.camerasExtraData0)
-		w.writeByte(this.camerasExtraData1)
+		w.writeByte(this.camerasExtraDatas.introPanFirstCameraIndex)
+		w.writeByte(this.camerasExtraDatas.unk0x01)
 		for (let i = 0; i < this.cameras.nodes.length; i++)
 		{
 			let cam = this.cameras.nodes[i]
@@ -1236,6 +1234,9 @@ class KmpData
 			newNode.effect = oldNode.effect
 		}
 		
+		this.camerasExtraDatas = {}
+		this.camerasExtraDatas.introPanFirstCameraIndex = 0
+		this.camerasExtraDatas.unk0x01 = 0
 		this.cameras = new NodeGraph()
 		this.cameras.onAddNode = (node) =>
 		{
@@ -1292,21 +1293,15 @@ class KmpData
 			newNode.unknown = oldNode.unknown
 		}
 		
-		if (this.trackInfo === null) {
-			this.trackInfo = {}
-			this.trackInfo.lapCount = 3
-			this.trackInfo.polePosition = 0
-			this.trackInfo.driverDistance = 0
-			this.trackInfo.unknown1 = 0
-			this.trackInfo.flareColor = [0x00, 0xff, 0xff, 0xff]
-			this.trackInfo.unknown2 = 50
-			this.trackInfo.unknown3 = 0
-			this.trackInfo.speedMod = 0
-
-			this.camerasExtraData0 = 0
-			this.camerasExtraData1 = 0
-		}
-
+        this.trackInfo = {}
+        this.trackInfo.lapCount = 3
+        this.trackInfo.polePosition = 0
+        this.trackInfo.driverDistance = 0
+        this.trackInfo.unknown1 = 0
+        this.trackInfo.flareColor = [0x00, 0xff, 0xff, 0xff]
+        this.trackInfo.unknown2 = 50
+        this.trackInfo.unknown3 = 0
+        this.trackInfo.speedMod = 0
 	}
 	
 	
@@ -1365,6 +1360,7 @@ class KmpData
 		cloned.checkpointPoints = this.checkpointPoints.clone()
 		cloned.objects = this.objects.clone()
 		cloned.respawnPoints = this.respawnPoints.clone()
+		cloned.camerasExtraDatas = this.camerasExtraDatas
 		cloned.cannonPoints = this.cannonPoints.clone()
 		cloned.cameras = this.cameras.clone()
 		
