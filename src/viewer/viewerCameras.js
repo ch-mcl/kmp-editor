@@ -76,7 +76,6 @@ class ViewerCameras
 		panel.addText(null, "<strong>Hold Alt + Drag Object:</strong> Duplicate Object")
 		panel.addText(null, "<strong>Hold Ctrl:</strong> Multiselect")
 		panel.addButton(null, "(A) Select/Unselect All", () => this.toggleAllSelection())
-		// panel.addButton(null, "(S) Select All With Same ID", () => this.toggleAllSelectionByID())
 		panel.addButton(null, "(X) Delete Selected", () => this.deleteSelectedPoints())
 
 		panel.addSelectionNumericInput(null, "First Opening Pan Camera", -1000000, 1000000, this.data.camerasExtraDatas.introPanFirstCameraIndex, null, 100.0, true, false, (x, i) => { this.window.setNotSaved(); this.data.camerasExtraDatas.introPanFirstCameraIndex = x })
@@ -245,22 +244,6 @@ class ViewerCameras
 	}
 	
 	
-	toggleAllSelectionByID()
-	{
-		let selectedObjs = this.data.cameras.nodes.filter(p => p.selected)
-		
-		for (let point of this.data.cameras.nodes)
-		{
-			if (selectedObjs.find(p => p.id == point.id) != null)
-				point.selected = true
-			else
-				point.selected = false
-		}
-		
-		this.refreshPanels()
-	}
-	
-	
 	deleteSelectedPoints()
 	{
 		let pointsToDelete = []
@@ -289,11 +272,6 @@ class ViewerCameras
 			case "A":
 			case "a":
 				this.toggleAllSelection()
-				return true
-			
-			case "S":
-			case "s":
-				this.toggleAllSelectionByID()
 				return true
 			
 			case "Backspace":
