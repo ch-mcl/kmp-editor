@@ -13,6 +13,7 @@ const { ViewerTrackInformation } = require("./viewerTrackInformation.js")
 const { ModelBuilder } = require("../util/modelBuilder.js")
 const { Vec3 } = require("../math/vec3.js")
 const { Mat4 } = require("../math/mat4.js")
+const { ViewerAreas } = require("./viewerAreas.js")
 
 
 class Viewer
@@ -116,6 +117,7 @@ class Viewer
 			new ViewerRespawnPoints(this.window, this, this.data),
 			new ViewerObjects(this.window, this, this.data),
 			new ViewerRoutes(this.window, this, this.data),
+			new ViewerAreas(this.window, this, this.data),
 			new ViewerCannonPoints(this.window, this, this.data),
 			new ViewerFinishPoints(this.window, this, this.data),
 			new ViewerTrackInformation(this.window, this, this.data),
