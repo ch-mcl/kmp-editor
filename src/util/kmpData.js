@@ -68,6 +68,7 @@ class KmpData
 		let cannonPoints = []
 		let trackInfo = {}
 		let unhandledSectionData = []
+		let extraDatas = []
 		
 		for (let sectionOffset of sectionOffsets)
 		{
@@ -353,10 +354,12 @@ class KmpData
 					break
 				}
 			}
+			extraDatas.push({ id: sectionId, vaule: extraData })
 		}
 		
 		return {
 			unhandledSectionData,
+			extraDatas,
 			startPoints, finishPoints,
 			enemyPoints, enemyPaths,
 			itemPoints, itemPaths,
@@ -374,6 +377,7 @@ class KmpData
 		let kmp = new KmpData()
 		kmp.trackInfo = kmpData.trackInfo
 		kmp.unhandledSectionData = kmpData.unhandledSectionData
+		kmp.extraDatas = kmpData.extraDatas
 		
 		for (let i = 0; i < kmpData.startPoints.length; i++)
 		{
@@ -677,10 +681,12 @@ class KmpData
 		w.seek(sectionOffsetsAddr + sectionKtptOrder * 4)
 		w.writeUInt32(sectionKtptAddr - headerEndAddr)
 		
+		let scetionMagicStr = "KTPT"
 		w.seek(sectionKtptAddr)
-		w.writeAscii("KTPT")
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(this.startPoints.nodes.length)
-		w.writeUInt16(0)
+		let extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData.vaule)
 		for (let p of this.startPoints.nodes)
 		{
 			w.writeFloat32(p.pos.x)
@@ -710,10 +716,12 @@ class KmpData
 		w.seek(sectionOffsetsAddr + sectionEnptOrder * 4)
 		w.writeUInt32(sectionEnptAddr - headerEndAddr)
 		
+		scetionMagicStr = "ENPT"
 		w.seek(sectionEnptAddr)
-		w.writeAscii("ENPT")
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(enemyPoints.length)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData.vaule)
 		for (let p of enemyPoints)
 		{
 			w.writeFloat32(p.pos.x)
@@ -731,10 +739,13 @@ class KmpData
 		w.seek(sectionOffsetsAddr + sectionEnphOrder * 4)
 		w.writeUInt32(sectionEnphAddr - headerEndAddr)
 		
+		scetionMagicStr = "ENPH"
 		w.seek(sectionEnphAddr)
-		w.writeAscii("ENPH")
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(enemyPaths.length)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData.vaule)
+
 		for (let path of enemyPaths)
 		{
 			if (path.nodes.length > 0xff)
@@ -788,10 +799,12 @@ class KmpData
 		w.seek(sectionOffsetsAddr + sectionItptOrder * 4)
 		w.writeUInt32(sectionItptAddr - headerEndAddr)
 		
+		scetionMagicStr = "ITPT"
 		w.seek(sectionItptAddr)
-		w.writeAscii("ITPT")
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(itemPoints.length)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData.vaule)
 		for (let p of itemPoints)
 		{
 			w.writeFloat32(p.pos.x)
@@ -808,10 +821,12 @@ class KmpData
 		w.seek(sectionOffsetsAddr + sectionItphOrder * 4)
 		w.writeUInt32(sectionItphAddr - headerEndAddr)
 		
+		scetionMagicStr = "ITPH"
 		w.seek(sectionItphAddr)
-		w.writeAscii("ITPH")
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(itemPaths.length)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData.vaule)
 		for (let path of itemPaths)
 		{
 			if (path.nodes.length > 0xff)
@@ -865,10 +880,12 @@ class KmpData
 		w.seek(sectionOffsetsAddr + sectionCkptOrder * 4)
 		w.writeUInt32(sectionCkptAddr - headerEndAddr)
 		
+		scetionMagicStr = "CKPT"
 		w.seek(sectionCkptAddr)
-		w.writeAscii("CKPT")
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(checkpointPoints.length)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData.vaule)
 		for (let i = 0; i < checkpointPoints.length; i++)
 		{
 			let p = checkpointPoints[i]
@@ -898,10 +915,12 @@ class KmpData
 		w.seek(sectionOffsetsAddr + sectionCkphOrder * 4)
 		w.writeUInt32(sectionCkphAddr - headerEndAddr)
 		
+		scetionMagicStr = "CKPH"
 		w.seek(sectionCkphAddr)
-		w.writeAscii("CKPH")
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(checkpointPaths.length)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData.vaule)
 		for (let path of checkpointPaths)
 		{
 			if (path.nodes.length > 0xff)
@@ -945,9 +964,11 @@ class KmpData
 		w.writeUInt32(sectionGobjAddr - headerEndAddr)
 		
 		w.seek(sectionGobjAddr)
-		w.writeAscii("GOBJ")
+		scetionMagicStr = "GOBJ"
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(this.objects.nodes.length)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData.vaule)
 		for (let i = 0; i < this.objects.nodes.length; i++)
 		{
 			let obj = this.objects.nodes[i]
@@ -1084,9 +1105,11 @@ class KmpData
 		w.writeUInt32(sectionJgptAddr - headerEndAddr)
 		
 		w.seek(sectionJgptAddr)
-		w.writeAscii("JGPT")
+		scetionMagicStr = "JGPT"
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(this.respawnPoints.nodes.length)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData.vaule)
 		for (let i = 0; i < this.respawnPoints.nodes.length; i++)
 		{
 			let p = this.respawnPoints.nodes[i]
@@ -1108,9 +1131,11 @@ class KmpData
 		w.writeUInt32(sectionCnptAddr - headerEndAddr)
 		
 		w.seek(sectionCnptAddr)
-		w.writeAscii("CNPT")
+		scetionMagicStr = "CNPT"
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(this.cannonPoints.nodes.length)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData.vaule)
 		for (let p of this.cannonPoints.nodes)
 		{
 			w.writeFloat32(p.pos.x)
@@ -1130,9 +1155,11 @@ class KmpData
 		w.writeUInt32(sectionMsptAddr - headerEndAddr)
 		
 		w.seek(sectionMsptAddr)
-		w.writeAscii("MSPT")
+		scetionMagicStr = "MSPT"
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(this.finishPoints.nodes.length)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData.vaule)
 		for (let p of this.finishPoints.nodes)
 		{
 			w.writeFloat32(p.pos.x)
@@ -1152,9 +1179,11 @@ class KmpData
 		w.writeUInt32(sectionStgiAddr - headerEndAddr)
 		
 		w.seek(sectionStgiAddr)
-		w.writeAscii("STGI")
+		scetionMagicStr = "STGI"
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(1)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData.vaule)
 		w.writeByte(this.trackInfo.lapCount)
 		w.writeByte(this.trackInfo.polePosition)
 		w.writeByte(this.trackInfo.driverDistance)
@@ -1175,6 +1204,7 @@ class KmpData
 	constructor()
 	{
 		this.unhandledSectionData = []
+		this.extraDatas = []
 		
 		this.startPoints = new NodeGraph()
 		this.startPoints.onAddNode = (node) =>
@@ -1458,6 +1488,7 @@ class KmpData
 		let cloned = new KmpData()
 		cloned.trackInfo = this.trackInfo
 		cloned.unhandledSectionData = this.unhandledSectionData
+		cloned.extraDatas = this.extraDatas
 		cloned.startPoints = this.startPoints.clone()
 		cloned.finishPoints = this.finishPoints.clone()
 		cloned.enemyPoints = this.enemyPoints.clone()
