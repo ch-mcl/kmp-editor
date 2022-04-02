@@ -71,15 +71,16 @@ class ViewerCameras
 		let panel = this.window.addPanel("Camera", false, (open) => { if (open) this.viewer.setSubviewer(this) })
 		this.panel = panel
 	
-		// panel.addCheckbox(null, "Draw rotation guides", this.viewer.cfg.enableRotationRender, (x) => this.viewer.cfg.enableRotationRender = x)
 		panel.addText(null, "<strong>Hold Alt + Click:</strong> Create Object")
 		panel.addText(null, "<strong>Hold Alt + Drag Object:</strong> Duplicate Object")
 		panel.addText(null, "<strong>Hold Ctrl:</strong> Multiselect")
 		panel.addButton(null, "(A) Select/Unselect All", () => this.toggleAllSelection())
 		panel.addButton(null, "(X) Delete Selected", () => this.deleteSelectedPoints())
 
-		panel.addSelectionNumericInput(null, "First Opening Pan Camera", -1000000, 1000000, this.data.camerasExtraDatas.introPanFirstCameraIndex, null, 100.0, true, false, (x, i) => { this.window.setNotSaved(); this.data.camerasExtraDatas.introPanFirstCameraIndex = x })
-		panel.addSelectionNumericInput(null, "unknown1", -1000000, 1000000, this.data.camerasExtraDatas.unk0x01, null, 100.0, true, false, (x, i) => { this.window.setNotSaved(); this.data.camerasExtraDatas.unk0x01 = x })
+		// let camerasExtraData = this.data.extraDatas.find(s => s.id == "CAME")
+		// let introPanFirstCameraIndex = camerasExtraData
+		panel.addSelectionNumericInput(null, "First Opening Pan Camera", 0, 0xff, this.data.camerasExtraDatas.introPanFirstCameraIndex, null, 100.0, true, false, (x, i) => { this.window.setNotSaved(); this.data.camerasExtraDatas.introPanFirstCameraIndex = x })
+		panel.addSelectionNumericInput(null, "unknown1", 0, 0xff, this.data.camerasExtraDatas.unk0x01, null, 100.0, true, false, (x, i) => { this.window.setNotSaved(); this.data.camerasExtraDatas.unk0x01 = x })
 
 		let selectedPoints = this.data.cameras.nodes.filter(p => p.selected)
 
