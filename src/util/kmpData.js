@@ -3,13 +3,6 @@ const { BinaryWriter } = require("./binaryWriter.js")
 const { Vec3 } = require("../math/vec3.js")
 
 
-let unhandledSections =
-[
-	{ id: "CNPT", entryLen: 0x1c },
-	{ id: "MSPT", entryLen: 0x1c },
-]
-
-
 let sectionOrder =
 [
 	"KTPT",
@@ -341,17 +334,7 @@ class KmpData
 				
 				default:
 				{
-					let unhandledSection = unhandledSections.find(s => s.id == sectionId)
-					if (unhandledSection == null)
-						throw ("kmp: section not handled: " + sectionId)
-					
-					let bytes = []
-					for (let i = 0; i < entryNum; i++)
-						for (let j = 0; j < unhandledSection.entryLen; j++)
-							bytes.push(parser.readByte())
-						
-					unhandledSectionData.push({ id: sectionId, extraData, bytes })
-					break
+					throw ("kmp: section not handled: " + sectionId)
 				}
 			}
 			extraDatas.push({ id: sectionId, vaule: extraData })
@@ -647,33 +630,6 @@ class KmpData
 		w.seek(headerLenAddr)
 		w.writeUInt16(headerEndAddr)
 		w.seek(headerEndAddr)
-		
-		let writeUnhandledSection = (tag) =>
-		{
-			let unhandledSection = this.unhandledSectionData.find(s => s.id == tag)
-			if (unhandledSection == null)
-			{
-				unhandledSection =
-				{
-					id: tag,
-					bytes: [],
-					extraData: 0
-				}
-			}
-			
-			let unhandledSectionProperties = unhandledSections.find(s => s.id == tag)
-			let order = sectionOrder.findIndex(s => s == tag)
-			
-			let head = w.head
-			w.seek(sectionOffsetsAddr + order * 4)
-			w.writeUInt32(head - headerEndAddr)
-			
-			w.seek(head)
-			w.writeAscii(unhandledSection.id)
-			w.writeUInt16(unhandledSection.bytes.length / unhandledSectionProperties.entryLen)
-			w.writeUInt16(unhandledSection.extraData)
-			w.writeBytes(unhandledSection.bytes)
-		}
 		
 		// Write KTPT
 		let sectionKtptAddr = w.head
@@ -1030,9 +986,11 @@ class KmpData
 		w.writeUInt32(sectionAreaAddr - headerEndAddr)
 
 		w.seek(sectionAreaAddr)
-		w.writeAscii("AREA")
+		scetionMagicStr = "AREA"
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(this.areas.nodes.length)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+		w.writeUInt16(extraData)
 		for (let i = 0; i < this.areas.nodes.length; i++)
 		{
 			let p = this.areas.nodes[i]
@@ -1064,7 +1022,8 @@ class KmpData
 		w.writeUInt32(sectionCameAddr - headerEndAddr)
 
 		w.seek(sectionCameAddr)
-		w.writeAscii("CAME")
+		scetionMagicStr = "CAME"
+		w.writeAscii(scetionMagicStr)
 		w.writeUInt16(this.cameras.nodes.length)
 		w.writeByte(this.camerasExtraDatas.introPanFirstCameraIndex)
 		w.writeByte(this.camerasExtraDatas.unk0x01)
