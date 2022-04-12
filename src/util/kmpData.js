@@ -977,9 +977,11 @@ class KmpData
 		w.writeUInt32(sectionAreaAddr - headerEndAddr)
 
 		w.seek(sectionAreaAddr)
-		w.writeAscii("AREA")
+		scetionMagicStr = "AREA"
+        w.writeAscii(scetionMagicStr)
 		w.writeUInt16(this.areas.nodes.length)
-		w.writeUInt16(0)
+		extraData = this.extraDatas.find(s => s.id == scetionMagicStr)
+        w.writeUInt16(extraData)
 		for (let i = 0; i < this.areas.nodes.length; i++)
 		{
 			let p = this.areas.nodes[i]
